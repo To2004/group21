@@ -1,0 +1,695 @@
+---
+title: "try"
+output: html_document
+date: "2024-06-22"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r}
+require(xgboost)
+require(Matrix)
+require(data.table)
+if (!require('vcd')) {
+  install.packages('vcd')
+}
+```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(nnet)
+library(tidyverse)
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(corrplot)
+library(tidymodels)
+library(schrute)
+library(lubridate)
+library(forcats)
+library(RColorBrewer)
+library(randomForest)
+library(xgboost) 
+library(pROC)
+library(caret)
+library(sharp)
+
+```
+
+
+```{r}
+data <- read.csv("/Users/orimood/Downloads/Group21_proposal/proposal template/data/tedsa_puf_2020.csv")
+# Load your dataset
+
+
+# Grouping variables
+demographic_vars <- c("AGE", "GENDER", "RACE", "ETHNIC")
+economic_status_vars <- c("EDUC", "EMPLOY", "PRIMINC")
+geographic_vars <- c("REGION", "DIVISION", "STFIPS", "HLTHINS")
+
+nrow(data)
+```
+
+```{r}
+socioeconomic_data <- data %>%
+  dplyr::select(AGE, GENDER, RACE, ETHNIC, EDUC, EMPLOY, LIVARAG, PRIMINC, STFIPS, REGION, HLTHINS, SUB1)
+```
+
+```{r}
+socioeconomic_data <- socioeconomic_data %>%
+  filter_if(is.numeric, all_vars(. != -9))
+```
+```{r}
+# Filter out rows where AGE column has values 1 or 2
+socioeconomic_data <- socioeconomic_data %>%
+  filter(!(AGE %in% c("1", "2")))
+```
+
+```{r}
+socioeconomic_data <- socioeconomic_data %>%
+  select(AGE, GENDER, RACE, ETHNIC, EDUC, EMPLOY, LIVARAG, PRIMINC, STFIPS, REGION, HLTHINS, SUB1) %>%
+  filter(SUB1 %in% c(2, 4, 5, 10))
+```
+
+```{r}
+ 
+
+
+df <- data.table(socioeconomic_data)
+# Load necessary libraries
+library(data.table)
+
+# Assuming df has already been created
+# Print the number of rows in df
+num_rows <- nrow(df)
+cat("Number of rows in df:", num_rows, "\n")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*drug number 2 - alcohol* 
+
+```{r}
+output_vector2 <- as.numeric(df[, SUB1] == 2)
+```
+
+
+```{r}
+bst <- xgboost(data = sparse_matrix,
+               label = output_vector2, 
+               max_depth = 4,
+               eta = 1,
+               nthread = 2,
+               nrounds = 10, 
+               objective = "binary:logistic",
+               scale_pos_weight = sum(output_vector2 == 0) / sum(output_vector2 == 1))
+```
+
+
+```{r}
+importance <- xgb.importance(feature_names = colnames(sparse_matrix), model = bst)
+head(importance)
+```
+
+
+```{r}
+xgb.plot.importance(importance_matrix = importance)
+```
+
+
+```{r}
+# Predict using the trained model
+predictions <- predict(bst, sparse_matrix)
+```
+
+
+```{r}
+
+# Convert predictions to binary class labels (0 or 1)
+predictions <- ifelse(predictions > 0.5, 1, 0)
+```
+
+```{r}
+# Confusion Matrix
+table(Predicted = predictions, Actual = output_vector2)
+
+# Precision, Recall, F1-Score (requires caret package)
+conf_matrix <- confusionMatrix(factor(predictions), factor(output_vector2))
+print(conf_matrix)
+```
+
+```{r}
+precision <- conf_matrix$byClass['Precision']
+recall <- conf_matrix$byClass['Recall']
+f1_score <- 2 * (precision * recall) / (precision + recall)
+print(precision)
+print(recall)
+print(f1_score)
+```
+```{r}
+# Predict using the trained model
+predictions <- predict(bst, sparse_matrix)
+
+```
+
+
+
+
+
+```{r}
+# Convert probabilities to binary predictions (using 0.5 threshold)
+binary_predictions <- ifelse(predictions > 0.5, 1, 0)
+
+# Compute Accuracy
+accuracy <- mean(binary_predictions == output_vector2)
+print(accuracy)
+
+
+auc <- roc(output_vector2, predictions)$auc
+print(auc)
+
+```
+
+
+```{r}
+# Compute the ROC curve
+roc_obj <- roc(output_vector2, predictions)
+
+# Plot the ROC curve
+plot(roc_obj, main = "ROC Curve - Alcohol", col = "magenta", lwd = 2)
+
+# Add AUC to the plot
+legend("bottomright", legend = paste("AUC =", round(roc_obj$auc, 4)), col = "magenta", lwd = 2)
+```
+
+
+*drug number 4 - marijuana* 
+
+```{r}
+output_vector4 <- as.numeric(df[, SUB1] == 4)
+```
+
+
+```{r}
+bst <- xgboost(data = sparse_matrix,
+               label = output_vector4, 
+               max_depth = 4,
+               eta = 1,
+               nthread = 2,
+               nrounds = 10, 
+               objective = "binary:logistic",
+               scale_pos_weight = sum(output_vector4 == 0) / sum(output_vector4 == 1))
+```
+
+
+```{r}
+importance <- xgb.importance(feature_names = colnames(sparse_matrix), model = bst)
+head(importance)
+```
+
+
+```{r}
+xgb.plot.importance(importance_matrix = importance)
+```
+
+
+```{r}
+# Predict using the trained model
+predictions <- predict(bst, sparse_matrix)
+```
+
+
+```{r}
+
+# Convert predictions to binary class labels (0 or 1)
+predictions <- ifelse(predictions > 0.5, 1, 0)
+```
+
+```{r}
+# Confusion Matrix
+table(Predicted = predictions, Actual = output_vector4)
+
+# Precision, Recall, F1-Score (requires caret package)
+conf_matrix <- confusionMatrix(factor(predictions), factor(output_vector4))
+print(conf_matrix)
+```
+
+```{r}
+precision <- conf_matrix$byClass['Precision']
+recall <- conf_matrix$byClass['Recall']
+f1_score <- 2 * (precision * recall) / (precision + recall)
+print(precision)
+print(recall)
+print(f1_score)
+```
+```{r}
+# Predict using the trained model
+predictions <- predict(bst, sparse_matrix)
+
+```
+
+
+
+
+
+```{r}
+# Convert probabilities to binary predictions (using 0.5 threshold)
+binary_predictions <- ifelse(predictions > 0.5, 1, 0)
+
+# Compute Accuracy
+accuracy <- mean(binary_predictions == output_vector4)
+print(accuracy)
+
+
+auc <- roc(output_vector4, predictions)$auc
+print(auc)
+
+```
+
+
+```{r}
+# Compute the ROC curve
+roc_obj <- roc(output_vector4, predictions)
+
+# Plot the ROC curve
+plot(roc_obj, main = "ROC Curve - Marijuana", col = "green", lwd = 2)
+
+# Add AUC to the plot
+legend("bottomright", legend = paste("AUC =", round(roc_obj$auc, 4)), col = "green", lwd = 2)
+```
+
+
+
+
+*drug number 5 - meth* 
+
+```{r}
+output_vector5 <- as.numeric(df[, SUB1] == 5)
+```
+
+
+```{r}
+bst <- xgboost(data = sparse_matrix,
+               label = output_vector5, 
+               max_depth = 4,
+               eta = 1,
+               nthread = 2,
+               nrounds = 10, 
+               objective = "binary:logistic",
+               scale_pos_weight = sum(output_vector5 == 0) / sum(output_vector5 == 1))
+```
+
+
+```{r}
+importance <- xgb.importance(feature_names = colnames(sparse_matrix), model = bst)
+head(importance)
+```
+
+
+```{r}
+xgb.plot.importance(importance_matrix = importance)
+```
+
+
+```{r}
+# Predict using the trained model
+predictions <- predict(bst, sparse_matrix)
+```
+
+
+```{r}
+
+# Convert predictions to binary class labels (0 or 1)
+predictions <- ifelse(predictions > 0.5, 1, 0)
+```
+
+```{r}
+# Confusion Matrix
+table(Predicted = predictions, Actual = output_vector5)
+
+# Precision, Recall, F1-Score (requires caret package)
+conf_matrix <- confusionMatrix(factor(predictions), factor(output_vector5))
+print(conf_matrix)
+```
+
+```{r}
+precision <- conf_matrix$byClass['Precision']
+recall <- conf_matrix$byClass['Recall']
+f1_score <- 2 * (precision * recall) / (precision + recall)
+print(precision)
+print(recall)
+print(f1_score)
+```
+
+
+```{r}
+# Predict using the trained model
+predictions <- predict(bst, sparse_matrix)
+
+```
+
+
+
+
+
+```{r}
+# Convert probabilities to binary predictions (using 0.5 threshold)
+binary_predictions <- ifelse(predictions > 0.5, 1, 0)
+
+# Compute Accuracy
+accuracy <- mean(binary_predictions == output_vector5)
+print(accuracy)
+
+
+auc <- roc(output_vector5, predictions)$auc
+print(auc)
+
+```
+
+```{r}
+# Compute the ROC curve
+roc_obj <- roc(output_vector5, predictions)
+
+# Plot the ROC curve
+plot(roc_obj, main = "ROC Curve - Meth", col = "deepskyblue", lwd = 2)
+
+# Add AUC to the plot
+legend("bottomright", legend = paste("AUC =", round(roc_obj$auc, 4)), col = "deepskyblue", lwd = 2)
+```
+
+
+
+
+*drug number 10 - heroin* 
+
+```{r}
+output_vector10 <- as.numeric(df[, SUB1] == 10)
+```
+
+
+```{r}
+bst <- xgboost(data = sparse_matrix,
+               label = output_vector10, 
+               max_depth = 4,
+               eta = 1,
+               nthread = 2,
+               nrounds = 10, 
+               objective = "binary:logistic",
+               scale_pos_weight = sum(output_vector10 == 0) / sum(output_vector10 == 1))
+```
+
+
+```{r}
+importance <- xgb.importance(feature_names = colnames(sparse_matrix), model = bst)
+head(importance)
+```
+
+
+```{r}
+xgb.plot.importance(importance_matrix = importance)
+```
+
+
+```{r}
+# Predict using the trained model
+predictions <- predict(bst, sparse_matrix)
+```
+
+
+```{r}
+
+# Convert predictions to binary class labels (0 or 1)
+binary_predictions <- ifelse(predictions > 0.5, 1, 0)
+```
+
+```{r}
+# Confusion Matrix
+table(Predicted = binary_predictions, Actual = output_vector10)
+
+# Precision, Recall, F1-Score (requires caret package)
+conf_matrix <- confusionMatrix(factor(binary_predictions), factor(output_vector10))
+print(conf_matrix)
+```
+
+```{r}
+precision <- conf_matrix$byClass['Precision']
+recall <- conf_matrix$byClass['Recall']
+f1_score <- 2 * (precision * recall) / (precision + recall)
+print(precision)
+print(recall)
+print(f1_score)
+```
+
+```{r}
+# Predict using the trained model
+#predictions <- predict(bst, sparse_matrix)
+
+```
+
+
+
+
+
+```{r}
+# Convert probabilities to binary predictions (using 0.5 threshold)
+#binary_predictions <- ifelse(predictions > 0.5, 1, 0)
+
+# Compute Accuracy
+#accuracy <- mean(binary_predictions == output_vector10)
+#print(accuracy)
+
+
+#auc <- roc(output_vector10, predictions)$auc
+#print(auc)
+
+```
+
+```{r}
+# Compute the ROC curve
+roc_obj <- roc(output_vector10, predictions)
+
+# Plot the ROC curve
+plot(roc_obj, main = "ROC Curve - Heroin", col = "orange", lwd = 2)
+
+# Add AUC to the plot
+legend("bottomright", legend = paste("AUC =", round(roc_obj$auc, 4)), col = "orange", lwd = 2)
+```
+
+*all together*
+
+
+
+
+```{r}
+
+# Step 1: Convert SUB1 to a factor
+df$SUB1 <- as.factor(df$SUB1)
+
+# Step 2: Get the levels of the factor
+levels_sub1 <- levels(df$SUB1)
+
+# Step 3: Create a mapping of the levels to their corresponding numeric codes
+factor_mapping <- as.numeric(df$SUB1)
+
+# Print the mapping
+mapping <- data.frame(Level = levels_sub1, Code = 1:length(levels_sub1))
+print(mapping)
+```
+
+
+
+```{r}
+
+output_vector <- as.numeric(df$SUB1)
+
+# Ensure labels start from 0 (if necessary)
+output_vector <- output_vector - 1
+
+num_classes <- length(unique(output_vector))
+
+# Count the number of rows per class
+class_counts <- table(output_vector)
+print(class_counts)
+```
+
+
+
+```{r}
+bst <- xgboost(data = sparse_matrix, 
+               label = output_vector, 
+               max_depth = 6,
+               eta = 1, 
+               nthread = 2, 
+               nrounds = 10, 
+               lambda = 1,         # L2 regularization
+               alpha = 0.1,        # L1 regularization               
+               objective = "multi:softprob", 
+               num_class = num_classes)
+```
+
+
+```{r}
+importance <- xgb.importance(feature_names = colnames(sparse_matrix), model = bst)
+head(importance)
+```
+
+
+```{r}
+xgb.plot.importance(importance_matrix = importance)
+```
+
+
+
+
+```{r}
+# Predict using the trained model
+pred_matrix <- predict(bst, sparse_matrix, reshape = TRUE)
+
+# Convert to data frame for easier manipulation
+pred_df <- as.data.frame(pred_matrix)
+
+# Assign column names (assuming 4 classes)
+colnames(pred_df) <- paste0("Class_", 1:4)
+
+
+# Get the predicted class labels
+predicted_classes <- apply(pred_df, 1, which.max)
+predicted_classes = predicted_classes - 1
+
+# Ensure the predicted_classes is a factor with the same levels as the output_vector
+predicted_classes <- factor(predicted_classes, levels = 0:3)
+
+# Check lengths of predictions and output_vector
+print(paste("Length of predictions:", length(predicted_classes)))
+print(paste("Length of output_vector:", length(output_vector)))
+
+# Calculate accuracy
+accuracy <- mean(predicted_classes == output_vector)
+print(paste("Accuracy:", accuracy))
+
+# Calculate confusion matrix
+conf_matrix <- table(predicted_classes, output_vector)
+print("Confusion Matrix:")
+print(conf_matrix)
+
+# Calculate precision, recall, and F1-score for each class
+precision <- diag(conf_matrix) / colSums(conf_matrix)
+recall <- diag(conf_matrix) / rowSums(conf_matrix)
+f1_score <- 2 * precision * recall / (precision + recall)
+
+# Print precision, recall, and F1-score for each class
+print("Precision, Recall, and F1-score:")
+print(data.frame(Class = 0:3,
+                 Precision = precision,
+                 Recall = recall,
+                 F1_Score = f1_score))
+```
+
+
+```{r}
+#
+#predictions <- apply(pred_df, 1, max)
+```
+
+
+```{r}
+binary_labels <- ifelse(output_vector == (1), 1, 0)
+```
+
+```{r}
+
+# Predict using the trained model
+pred_matrix <- predict(bst, sparse_matrix, reshape = TRUE)
+
+# Convert to data frame for easier manipulation
+pred_df <- as.data.frame(pred_matrix)
+
+# Assign column names (assuming 4 classes)
+colnames(pred_df) <- paste0("Class_", 1:4)
+
+# Get the predicted class labels
+predicted_classes <- apply(pred_df, 1, which.max)
+predicted_classes = predicted_classes - 1
+```
+
+
+```{r}
+
+# Initialize a list to hold ROC objects for each class
+roc_list <- list()
+auc_values <- numeric(num_classes)
+
+# Plot ROC curve for each class
+for (i in 1:num_classes) {
+  # Create binary labels for the current class (one-vs-all)
+  binary_labels <- ifelse(output_vector == (i - 1), 1, 0)
+  
+  # Check if binary_labels contains both 0 and 1
+  if (length(unique(binary_labels)) == 2) {
+    # Create ROC object for the current class
+    roc_obj <- roc(binary_labels, predicted_classes)
+    
+    # Store the ROC object
+    roc_list[[i]] <- roc_obj
+    auc_values[i] <- auc(roc_obj)  # Compute AUC value
+    
+    # Plot the ROC curve for the current class
+    plot(roc_obj, col = i, lwd = 2, main = "ROC Curve for Each Class", add = ifelse(i == 1, FALSE, TRUE))
+  } else {
+    message(paste("Class", i - 1, "does not have both positive and negative samples. Skipping ROC curve."))
+  }
+}
+
+# Create legend text with AUC values
+legend_text <- paste("Class", 0:(num_classes - 1), "- AUC:", round(auc_values, 2))
+
+# Add legend
+legend("bottomright", legend = legend_text, col = 1:num_classes, lwd = 2)
+
+
+
+
+```
+
+
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
