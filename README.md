@@ -1,5 +1,22 @@
 # group21
 
+# Instructions
+
+1. **Download the dataset** from the provided link.
+
+2. **Open RStudio** and ensure you have the necessary libraries installed.
+
+3. **Place the downloaded file** in a directory of your choice.
+
+4. **Update the file path** in the following R code to match the location where you saved the file:
+
+    ```R
+    data <- read.csv("/path/to/your/directory/tedsa_puf_2020.csv")
+    ```
+
+    Replace `"/path/to/your/directory/tedsa_puf_2020.csv"` with the actual path to the CSV file on your system.
+
+5. **Run the code** in RStudio to load the dataset.
 
 ## Here is a high-level overview of the key elements and variables in the dataset:
 ## Detailed Column Descriptions
